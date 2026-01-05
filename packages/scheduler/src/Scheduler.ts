@@ -8,8 +8,14 @@ import {
   PriorityLevel,
   UserBlockingPriority,
 } from "./SchedulerPriorities";
-import { pop } from "./SchedulerMinHeap";
+import { pop, push } from "./SchedulerMinHeap";
 import { peek } from "./SchedulerMinHeap";
+import {
+  lowPriorityTimeout,
+  maxSigned31BitInt,
+  normalPriorityTimeout,
+  userBlockingPriorityTimeout,
+} from "./SchedulerFeatureFlags";
 
 type Callback = (arg: boolean) => Callback | null | undefined;
 
@@ -24,6 +30,9 @@ export type Task = {
 
 const taskQueue: Array<Task> = []; // 没有延迟的任务
 
+// 标记task的唯一性
+let taskIdCounter = 0;
+
 let currentTask: Task | null = null;
 let currentPriorityLevel: PriorityLevel = NoPriority;
 
@@ -33,12 +42,59 @@ let startTime = -1;
 // 时间切片，这是个时间段
 let frameInterval = 5;
 
+// 是否有work正在执行
+let isPerformingWork = false;
+
+// 主线程是否在调度
+let isHostCallbackScheduled = false;
+
+function getTimeoutForPriority(priorityLevel: PriorityLevel): number {
+  switch (priorityLevel) {
+    case ImmediatePriority:
+      return -1;
+    case UserBlockingPriority:
+      return userBlockingPriorityTimeout;
+    case NormalPriority:
+      return normalPriorityTimeout;
+    case LowPriority:
+      return lowPriorityTimeout;
+    case IdlePriority:
+      return maxSigned31BitInt;
+    default:
+      return 1000;
+  }
+}
+
 /**
  * 任务调度器入口函数
  * @param priorityLevel 优先级
  * @param callback 回调函数
  */
-function scheduleCallback(priorityLevel: PriorityLevel, callback: Callback) {}
+function scheduleCallback(priorityLevel: PriorityLevel, callback: Callback) {
+  const startTime = getCurrentTime();
+  const timeout = getTimeoutForPriority(priorityLevel);
+  // expirationTime是过期时间，理论上是任务执行时间
+  const expirationTime = startTime + timeout;
+  const newTask: Task = {
+    id: taskIdCounter++,
+    callback,
+    priorityLevel,
+    startTime,
+    expirationTime,
+    sortIndex: -1,
+  };
+
+  // 相当于到达时间 + 任务优先级用于排序
+  newTask.sortIndex = expirationTime;
+  push(taskQueue, newTask);
+
+  if (!isHostCallbackScheduled && !isPerformingWork) {
+    isHostCallbackScheduled = true;
+    requestHostCallback();
+  }
+}
+
+function requestHostCallback() {}
 
 /**
  * 取消某个元素，由于最小堆没法直接删除元素，因此只能初步把task.callback设置为null
