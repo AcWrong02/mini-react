@@ -1,3 +1,4 @@
+import { getCurrentTime } from "shared/utils";
 import {
   IdlePriority,
   ImmediatePriority,
@@ -7,6 +8,8 @@ import {
   PriorityLevel,
   UserBlockingPriority,
 } from "./SchedulerPriorities";
+import { pop } from "./SchedulerMinHeap";
+import { peek } from "./SchedulerMinHeap";
 
 type Callback = (arg: boolean) => Callback | null | undefined;
 
@@ -23,6 +26,12 @@ const taskQueue: Array<Task> = []; // 没有延迟的任务
 
 let currentTask: Task | null = null;
 let currentPriorityLevel: PriorityLevel = NoPriority;
+
+// 记录时间切片的起始值，时间戳
+let startTime = -1;
+
+// 时间切片，这是个时间段
+let frameInterval = 5;
 
 /**
  * 任务调度器入口函数
@@ -43,7 +52,60 @@ function getCurrentPriorityLevel(): PriorityLevel {
   return currentPriorityLevel;
 }
 
-function shouldYieldToHost() {}
+/**
+ * 时间分片任务的执行过程
+ * @param initialTime 初始时间
+ * @returns 是否还有任务要执行
+ */
+function workLoop(initialTime: number): boolean {
+  let currentTime = initialTime;
+  currentTask = peek(taskQueue);
+  while (currentTask !== null) {
+    if (currentTask.expirationTime > currentTime && shouldYieldToHost()) {
+      break;
+    }
+
+    // 执行任务
+    const callback = currentTask.callback;
+    if (typeof callback === "function") {
+      // 有效的任务
+      currentTask.callback = null;
+      currentPriorityLevel = currentTask.priorityLevel;
+      const didUserCallbackTimeout = currentTask.expirationTime <= currentTime;
+      const continuationCallback = callback(didUserCallbackTimeout);
+      if (typeof continuationCallback === "function") {
+        currentTask.callback = continuationCallback;
+        return true;
+      } else {
+        if (currentTask === peek(taskQueue)) {
+          pop(taskQueue);
+          currentTime = getCurrentTime();
+        }
+      }
+    } else {
+      // 无效的任务
+      pop(taskQueue);
+    }
+
+    currentTask = peek(taskQueue);
+  }
+
+  if (currentTask !== null) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+function shouldYieldToHost() {
+  const timeElapsed = getCurrentTime() - startTime;
+
+  if (timeElapsed < frameInterval) {
+    return false;
+  }
+
+  return true;
+}
 
 export {
   ImmediatePriority,
