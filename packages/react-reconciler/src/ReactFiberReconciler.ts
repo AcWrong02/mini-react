@@ -1,5 +1,6 @@
 import { ReactNodeList } from "shared/ReactTypes";
 import { FiberRoot } from "./ReactInternalTypes";
+import { scheduleUpdateOnFiber } from "./ReactFiberWorkLoop";
 
 export function updateContainer(element: ReactNodeList, container: FiberRoot) {
   // 1. 获取current
@@ -11,6 +12,6 @@ export function updateContainer(element: ReactNodeList, container: FiberRoot) {
     "font-size:13px; background:pink; color:#bf2c9f;",
     current
   );
-  // ! 2. 调度更新
-  // scheduleUpdateOnFiber()
+  // 2. 调度更新
+  scheduleUpdateOnFiber(container, current);
 }
