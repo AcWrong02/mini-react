@@ -1,6 +1,12 @@
+import { isStr } from "shared/utils";
 import { NoFlags } from "./ReactFiberFlags";
 import { Fiber } from "./ReactInternalTypes";
-import { WorkTag } from "./ReactWorkTags";
+import {
+  HostComponent,
+  IndeterminateComponent,
+  WorkTag,
+} from "./ReactWorkTags";
+import { ReactElement } from "shared/ReactTypes";
 
 // 创建一个Fiber
 export function createFiber(
@@ -46,6 +52,32 @@ function FiberNode(tag: WorkTag, pendingProps: any, key: null | string) {
 
   // 缓存fiber
   this.alternate = null;
+}
+
+// 根据 ReactElement 创建Fiber
+export function createFiberFromElement(element: ReactElement) {
+  const { type, key } = element;
+  const pendingProps = element.props;
+  const fiber = createFiberFromTypeAndProps(type, key, pendingProps);
+  return fiber;
+}
+
+// 根据 TypeAndProps 创建fiber
+export function createFiberFromTypeAndProps(
+  type: any,
+  key: null | string,
+  pendingProps: any
+) {
+  let fiberTag: WorkTag = IndeterminateComponent;
+  if (isStr(type)) {
+    // 原生标签
+    fiberTag = HostComponent;
+  }
+
+  const fiber = createFiber(fiberTag, pendingProps, key);
+  fiber.elementType = type;
+  fiber.type = type;
+  return fiber;
 }
 
 export function createWorkInProgress(current: Fiber, pendingProps: any): Fiber {

@@ -68,11 +68,11 @@ function performUnitOfWork(unitOfWork: Fiber) {
   // 1.2 返回子节点
   if (next === null) {
     // 没有产生新的work
+    // 2. completeWork
     completeUnitOfWork(unitOfWork);
   } else {
     workInProgress = next;
   }
-  // 2. completeWork
 }
 
 // 深度优先遍历
