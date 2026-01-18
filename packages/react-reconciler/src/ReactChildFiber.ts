@@ -59,7 +59,7 @@ function createChildReconciler(shouldTrackSideEffects: boolean) {
       created.return = returnFiber;
       return created;
     }
-    
+
     if (typeof newChild === "object" && newChild !== null) {
       switch (newChild.$$typeof) {
         case REACT_ELEMENT_TYPE: {

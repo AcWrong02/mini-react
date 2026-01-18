@@ -2,12 +2,14 @@ import { isStr } from "shared/utils";
 import { NoFlags } from "./ReactFiberFlags";
 import { Fiber } from "./ReactInternalTypes";
 import {
+  Fragment,
   HostComponent,
   HostText,
   IndeterminateComponent,
   WorkTag,
 } from "./ReactWorkTags";
 import { ReactElement } from "shared/ReactTypes";
+import { REACT_FRAGMENT_TYPE } from "shared/ReactSymbols";
 
 // 创建一个Fiber
 export function createFiber(
@@ -73,6 +75,8 @@ export function createFiberFromTypeAndProps(
   if (isStr(type)) {
     // 原生标签
     fiberTag = HostComponent;
+  } else if (type === REACT_FRAGMENT_TYPE) {
+    fiberTag = Fragment;
   }
 
   const fiber = createFiber(fiberTag, pendingProps, key);

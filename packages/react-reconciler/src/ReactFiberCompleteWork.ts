@@ -1,6 +1,6 @@
 import { isNum, isStr } from "shared/utils";
 import { Fiber } from "./ReactInternalTypes";
-import { HostComponent, HostRoot, HostText } from "./ReactWorkTags";
+import { Fragment, HostComponent, HostRoot, HostText } from "./ReactWorkTags";
 
 export function completeWork(
   current: Fiber | null,
@@ -8,7 +8,8 @@ export function completeWork(
 ): Fiber | null {
   const newProps = workInProgress.pendingProps;
   switch (workInProgress.tag) {
-    case HostRoot: {
+    case HostRoot:
+    case Fragment: {
       return null;
     }
     case HostComponent: {
@@ -55,7 +56,34 @@ function finalizeInitialChildren(domElement: Element, props: any) {
 function appendAllChildren(parent: Element, workInProgress: Fiber) {
   let nodeFiber = workInProgress.child; // 链表结构
   while (nodeFiber !== null) {
-    parent.appendChild(nodeFiber.stateNode);
+    if (isHost(nodeFiber)) {
+      parent.appendChild(nodeFiber.stateNode); // nodeFiber.stateNode是DOM节点
+    } else if (nodeFiber.child !== null) {
+      nodeFiber = nodeFiber.child;
+      continue;
+    }
+
+    // 如果处理完的是直接子节点，继续处理其兄弟节点
+    if (nodeFiber.return === workInProgress) {
+      // 移动到下一个兄弟节点，如果没有兄弟节点，循环会自然结束
+      nodeFiber = nodeFiber.sibling;
+      continue;
+    }
+
+    // 处理的是子孙节点，需要向上回溯
+    while (nodeFiber.sibling === null) {
+      if (nodeFiber.return === null || nodeFiber.return === workInProgress) {
+        return;
+      }
+
+      nodeFiber = nodeFiber.return;
+    }
+
     nodeFiber = nodeFiber.sibling;
   }
+}
+
+// fiber.stateNode是DOM节点
+export function isHost(fiber: Fiber): boolean {
+  return fiber.tag === HostComponent || fiber.tag === HostText;
 }
