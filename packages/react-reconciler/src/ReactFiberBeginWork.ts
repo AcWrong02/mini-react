@@ -1,5 +1,5 @@
 import { Fiber } from "./ReactInternalTypes";
-import { HostComponent, HostRoot } from "./ReactWorkTags";
+import { HostComponent, HostRoot, HostText } from "./ReactWorkTags";
 import { mountChildFibers, reconcileChildFibers } from "./ReactChildFiber";
 import { isNum, isStr } from "shared/utils";
 
@@ -14,6 +14,8 @@ export function beginWork(
       return updateHostRoot(current, workInProgress);
     case HostComponent:
       return updateHostComponent(current, workInProgress);
+    case HostText:
+      return updateHostText(current, workInProgress);
     // todo
   }
   throw new Error(
@@ -45,6 +47,11 @@ function updateHostComponent(current: Fiber | null, workInProgress: Fiber) {
   reconcileChildren(current, workInProgress, nextChildren);
 
   return workInProgress.child;
+}
+
+// 文本没有子节点，不需要协调
+function updateHostText(current: Fiber | null, workInProgress: Fiber) {
+  return null;
 }
 
 // 协调子节点，构建新的fiber树

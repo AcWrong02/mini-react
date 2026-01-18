@@ -2,6 +2,10 @@ export function getCurrentTime(): number {
   return performance.now();
 }
 
+export function isArray(sth: any) {
+  return Array.isArray(sth);
+}
+
 export function isNum(sth: any) {
   return typeof sth === "number";
 }

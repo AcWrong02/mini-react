@@ -1,6 +1,6 @@
 import { Placement } from "./ReactFiberFlags";
 import { Fiber, FiberRoot } from "./ReactInternalTypes";
-import { HostComponent, HostRoot } from "./ReactWorkTags";
+import { HostComponent, HostRoot, HostText } from "./ReactWorkTags";
 
 export function commitMutationEffects(root: FiberRoot, finishedWork: Fiber) {
   // 1. 遍历
@@ -33,7 +33,7 @@ function commitReconciliationEffects(finishedWork: Fiber) {
 
 function commitPlacement(finishedWork: Fiber) {
   // parentDom.appendChild(domNode);
-  if (finishedWork.stateNode && finishedWork.tag === HostComponent) {
+  if (finishedWork.stateNode && (finishedWork.tag === HostComponent || finishedWork.tag === HostText)) {
     // finishedWork是有dom节点
     const domNode = finishedWork.stateNode;
     // 找domNode的父DOM节点对应的fiber
