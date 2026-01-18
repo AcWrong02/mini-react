@@ -1,6 +1,6 @@
 import { isNum, isStr } from "shared/utils";
 import { Fiber } from "./ReactInternalTypes";
-import { Fragment, HostComponent, HostRoot, HostText } from "./ReactWorkTags";
+import { ClassComponent, Fragment, HostComponent, HostRoot, HostText } from "./ReactWorkTags";
 
 export function completeWork(
   current: Fiber | null,
@@ -9,7 +9,8 @@ export function completeWork(
   const newProps = workInProgress.pendingProps;
   switch (workInProgress.tag) {
     case HostRoot:
-    case Fragment: {
+    case Fragment:
+    case ClassComponent: {
       return null;
     }
     case HostComponent: {

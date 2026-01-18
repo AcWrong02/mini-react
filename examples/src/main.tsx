@@ -1,4 +1,4 @@
-import { ReactDOM } from "../which-react";
+import { ReactDOM, Component } from "../which-react";
 import "./index.css";
 
 let fragment1 = (
@@ -11,9 +11,19 @@ let fragment1 = (
   </>
 );
 
+class ClassComponent extends Component {
+  render() {
+    return (
+      <div>
+        <h3>ClassComponent</h3>
+      </div>
+    );
+  }
+}
 
 const jsx = (
   <div className="box border">
+    <ClassComponent />
     {fragment1}
     <h1 className="border">omg</h1>
     123

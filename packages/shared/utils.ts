@@ -13,3 +13,7 @@ export function isNum(sth: any) {
 export function isStr(sth: any) {
   return typeof sth === "string";
 }
+
+export function isFn(sth: any) {
+  return typeof sth === "function";
+}
