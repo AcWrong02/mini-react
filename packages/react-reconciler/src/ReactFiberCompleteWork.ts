@@ -1,6 +1,6 @@
 import { isNum, isStr } from "shared/utils";
 import { Fiber } from "./ReactInternalTypes";
-import { ClassComponent, Fragment, HostComponent, HostRoot, HostText } from "./ReactWorkTags";
+import { ClassComponent, Fragment, FunctionComponent, HostComponent, HostRoot, HostText } from "./ReactWorkTags";
 
 export function completeWork(
   current: Fiber | null,
@@ -10,7 +10,8 @@ export function completeWork(
   switch (workInProgress.tag) {
     case HostRoot:
     case Fragment:
-    case ClassComponent: {
+    case ClassComponent:
+    case FunctionComponent: {
       return null;
     }
     case HostComponent: {
@@ -34,7 +35,7 @@ export function completeWork(
 
   throw new Error(
     `Unknown unit of work tag (${workInProgress.tag}). This error is likely caused by a bug in ` +
-      "React. Please file an issue."
+    "React. Please file an issue."
   );
 }
 

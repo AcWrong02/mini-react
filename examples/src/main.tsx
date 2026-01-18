@@ -11,19 +11,31 @@ let fragment1 = (
   </>
 );
 
-class ClassComponent extends Component {
+class ClassComponent extends Component<any, any> {
+  constructor(props: { name: string }) {
+    super(props);
+  }
   render() {
     return (
       <div>
-        <h3>ClassComponent</h3>
+        <h3>{this.props.name}</h3>
       </div>
     );
   }
 }
 
+function FunctionComponent({ name }: { name: string }) {
+  return (
+    <div>
+      <h3>{name}</h3>
+    </div>
+  );
+}
+
 const jsx = (
   <div className="box border">
-    <ClassComponent />
+    <FunctionComponent name="函数组件" />
+    <ClassComponent name="类组件" />
     {fragment1}
     <h1 className="border">omg</h1>
     123

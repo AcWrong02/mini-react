@@ -1,5 +1,5 @@
 import { Fiber } from "./ReactInternalTypes";
-import { ClassComponent, Fragment, HostComponent, HostRoot, HostText } from "./ReactWorkTags";
+import { ClassComponent, Fragment, FunctionComponent, HostComponent, HostRoot, HostText } from "./ReactWorkTags";
 import { mountChildFibers, reconcileChildFibers } from "./ReactChildFiber";
 import { isNum, isStr } from "shared/utils";
 
@@ -16,15 +16,17 @@ export function beginWork(
       return updateHostComponent(current, workInProgress);
     case HostText:
       return updateHostText(current, workInProgress);
-    case Fragment: 
+    case Fragment:
       return updateHostFragment(current, workInProgress)
     case ClassComponent:
       return updateClassComponent(current, workInProgress)
+    case FunctionComponent:
+      return updateFunctionComponent(current, workInProgress);
     // todo
   }
   throw new Error(
     `Unknown unit of work tag (${workInProgress.tag}). This error is likely caused by a bug in ` +
-      "React. Please file an issue."
+    "React. Please file an issue."
   );
 }
 
@@ -58,7 +60,7 @@ function updateHostText(current: Fiber | null, workInProgress: Fiber) {
   return null;
 }
 
-function updateHostFragment(current: Fiber | null, workInProgress: Fiber ) {
+function updateHostFragment(current: Fiber | null, workInProgress: Fiber) {
   const nextChildren = workInProgress.pendingProps.children;
   reconcileChildren(current, workInProgress, nextChildren);
   return workInProgress.child;
@@ -70,6 +72,13 @@ function updateClassComponent(current: Fiber | null, workInProgress: Fiber) {
   const { type, pendingProps } = workInProgress;
   const instance = new type(pendingProps);
   const children = instance.render();
+  reconcileChildren(current, workInProgress, children);
+  return workInProgress.child;
+}
+
+function updateFunctionComponent(current: Fiber | null, workInProgress: Fiber) {
+  const { type, pendingProps } = workInProgress;
+  const children = type(pendingProps);
   reconcileChildren(current, workInProgress, children);
   return workInProgress.child;
 }
