@@ -50,12 +50,18 @@ function finalizeInitialChildren(domElement: Element, props: any) {
       }
     } else {
       // 3. 设置属性
-      (domElement as any)[propKey] = nextProp;
+      if (propKey === "onClick") {
+        domElement.addEventListener("click", nextProp);
+      } else {
+        (domElement as any)[propKey] = nextProp;
+      }
     }
   }
 }
 
 function appendAllChildren(parent: Element, workInProgress: Fiber) {
+  const parentClassName = parent.className
+  const isRoot = parentClassName === 'box border'
   let nodeFiber = workInProgress.child; // 链表结构
   while (nodeFiber !== null) {
     if (isHost(nodeFiber)) {

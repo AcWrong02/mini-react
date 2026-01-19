@@ -2,6 +2,7 @@ import { Fiber } from "./ReactInternalTypes";
 import { ClassComponent, Fragment, FunctionComponent, HostComponent, HostRoot, HostText } from "./ReactWorkTags";
 import { mountChildFibers, reconcileChildFibers } from "./ReactChildFiber";
 import { isNum, isStr } from "shared/utils";
+import { renderWithHooks } from "./ReactFiberHooks";
 
 // 1. 处理当前fiber，因为不同组件对应的fiber处理方式不同，
 // 2. 返回子节点
@@ -78,7 +79,7 @@ function updateClassComponent(current: Fiber | null, workInProgress: Fiber) {
 
 function updateFunctionComponent(current: Fiber | null, workInProgress: Fiber) {
   const { type, pendingProps } = workInProgress;
-  const children = type(pendingProps);
+  const children = renderWithHooks(current, workInProgress, type, pendingProps);
   reconcileChildren(current, workInProgress, children);
   return workInProgress.child;
 }

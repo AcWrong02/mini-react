@@ -1,47 +1,23 @@
-import { ReactDOM, Component } from "../which-react";
+import { ReactDOM, useReducer } from "../which-react";
 import "./index.css";
 
-let fragment1 = (
-  <>
-    <>
-      <h3>1</h3>
-    </>
-    <h4>2</h4>
-    <>o</>
-  </>
-);
-
-class ClassComponent extends Component<any, any> {
-  constructor(props: { name: string }) {
-    super(props);
-  }
-  render() {
-    return (
-      <div>
-        <h3>{this.props.name}</h3>
-      </div>
-    );
-  }
-}
-
-function FunctionComponent({ name }: { name: string }) {
+function FunctionComponent() {
+  const [count1, setCount1] = useReducer((x) => x + 1, 0);
   return (
     <div>
-      <h3>{name}</h3>
+      <h3>函数组件</h3>
+      <button
+        onClick={() => {
+          setCount1();
+        }}
+      >
+        {count1}
+      </button>
     </div>
   );
 }
 
-const jsx = (
-  <div className="box border">
-    <FunctionComponent name="函数组件" />
-    <ClassComponent name="类组件" />
-    {fragment1}
-    <h1 className="border">omg</h1>
-    123
-    <h2>react</h2>
-    omg2
-  </div>
-);
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(jsx);
+ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+  (<FunctionComponent />) as any
+);
