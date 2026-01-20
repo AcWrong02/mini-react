@@ -148,7 +148,7 @@ function performWorkUntilDeadline() {
   if (isMessageLoopRunning) {
     const currentTime = getCurrentTime();
     // 记录了一个work的起始时间，其实就是一个时间切片的起始时间，是一个时间戳
-    const startTime = currentTime;
+    startTime = currentTime;
     let hasMorkWork = true;
     try {
       hasMorkWork = flushWork(startTime);
