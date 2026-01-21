@@ -1,7 +1,7 @@
 import { createFiberFromElement, createFiberFromText, createWorkInProgress } from "./ReactFiber";
 import { Fiber } from "./ReactInternalTypes";
 import { REACT_ELEMENT_TYPE } from "shared/ReactSymbols";
-import { Placement } from "./ReactFiberFlags";
+import { ChildDeletion, Placement } from "./ReactFiberFlags";
 import { ReactElement } from "shared/ReactTypes";
 import { isArray } from "shared/utils";
 
@@ -18,6 +18,36 @@ export const mountChildFibers: ChildReconciler = createChildReconciler(false);
 // wrapper function
 // 协调子节点
 function createChildReconciler(shouldTrackSideEffects: boolean) {
+  function deleteChild(returnFiber: Fiber, childToDelete: Fiber) {
+    if (!shouldTrackSideEffects) {
+      return;
+    }
+    const deletions = returnFiber.deletions;
+    if (deletions === null) {
+      returnFiber.deletions = [childToDelete];
+      returnFiber.flags |= ChildDeletion;
+    } else {
+      returnFiber.deletions!.push(childToDelete);
+    }
+  }
+
+  function deleteRemainingChildren(
+    returnFiber: Fiber,
+    currentFirstChild: Fiber
+  ) {
+    if (!shouldTrackSideEffects) {
+      return;
+    }
+
+    let childToDelete: Fiber | null = currentFirstChild;
+    while (childToDelete !== null) {
+      deleteChild(returnFiber, childToDelete);
+      childToDelete = childToDelete.sibling;
+    }
+
+    return null;
+  }
+
   // 给fiber节点添加flags
   function placeSingleChild(newFiber: Fiber) {
     if (shouldTrackSideEffects && newFiber.alternate === null) {
@@ -69,13 +99,12 @@ function createChildReconciler(shouldTrackSideEffects: boolean) {
           existing.return = returnFiber;
           return existing;
         } else {
-          // 前提：React不认为同一层级下有两个相同的key值
+          deleteRemainingChildren(returnFiber, child);
           break;
         }
       } else {
-        // todo
         // 删除单个节点
-        // deleteChild()
+        deleteChild(returnFiber, child);
       }
       // 老fiber节点是单链表
       child = child.sibling;
