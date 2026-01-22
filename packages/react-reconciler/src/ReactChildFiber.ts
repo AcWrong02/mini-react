@@ -229,6 +229,38 @@ function createChildReconciler(shouldTrackSideEffects: boolean) {
     }
   }
 
+  function mapRemainingChildren(oldFiber: Fiber): Map<string | number, Fiber> {
+    const existingChildren: Map<string | number, Fiber> = new Map();
+    let existingChild: Fiber | null = oldFiber;
+    while (existingChild !== null) {
+      if (existingChild.key !== null) {
+        existingChildren.set(existingChild.key, existingChild);
+      } else {
+        existingChildren.set(existingChild.index, existingChild);
+      }
+      existingChild = existingChild.sibling;
+    }
+
+    return existingChildren;
+  }
+
+  function updateFromMap(
+    existingChildren: Map<string | number, Fiber>,
+    returnFiber: Fiber,
+    newIdx: number,
+    newChild: any
+  ): Fiber | null {
+    if (isText(newChild)) {
+      const matchedFiber = existingChildren.get(newIdx) || null;
+      return updateTextNode(returnFiber, matchedFiber, newChild + "");
+    } else {
+      const matchedFiber =
+        existingChildren.get(newChild.key === null ? newIdx : newChild.key) ||
+        null;
+      return updateElement(returnFiber, matchedFiber, newChild);
+    }
+  }
+
   function reconcileChildrenArray(
     returnFiber: Fiber,
     currentFirstChild: Fiber | null,
@@ -258,10 +290,11 @@ function createChildReconciler(shouldTrackSideEffects: boolean) {
       // todo
       const newFiber = updateSlot(returnFiber, oldFiber, newChildren[newIdx]);
 
-      if (newFiber !== null) {
+      if (newFiber === null) {
         if (oldFiber === null) {
-          break;
+          oldFiber = nextOldFiber;
         }
+        break;
       }
 
       if (shouldTrackSideEffects) {
@@ -313,6 +346,42 @@ function createChildReconciler(shouldTrackSideEffects: boolean) {
         previousNewFiber = newFiber;
       }
       return resultFirstChild;
+    }
+
+    // !2.3 新老节点都还有
+    // [0, 1, 2, 3, 4, 5] : [0, 1, 2, 4, 5];
+    // old 3 4 5
+    // new 4 5
+    // 构建map
+    const existingChildren = mapRemainingChildren(oldFiber);
+    for (; newIdx < newChildren.length; newIdx++) {
+      const newFiber = updateFromMap(
+        existingChildren,
+        returnFiber,
+        newIdx,
+        newChildren[newIdx]
+      );
+      // 能复用并且在更新阶段，将其从existingChildren中删除
+      if (newFiber !== null) {
+        if (shouldTrackSideEffects) {
+          existingChildren.delete(
+            newFiber.key === null ? newIdx : newFiber.key
+          );
+        }
+      }
+      lastPlacedIndex = placeChild(newFiber as Fiber, lastPlacedIndex, newIdx);
+      if (previousNewFiber === null) {
+        // 第一个节点，不要用newIdx判断，因为有可能有null，而null不是有效fiber
+        resultFirstChild = newFiber;
+      } else {
+        previousNewFiber.sibling = newFiber;
+      }
+      previousNewFiber = newFiber;
+    }
+
+    // !3. 如果新节点已经构建完了，但是老节点还有
+    if (shouldTrackSideEffects) {
+      existingChildren.forEach((child) => deleteChild(returnFiber, child));
     }
 
     return resultFirstChild;
