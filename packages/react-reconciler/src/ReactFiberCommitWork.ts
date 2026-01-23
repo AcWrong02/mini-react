@@ -1,7 +1,8 @@
 import { isHost } from "./ReactFiberCompleteWork";
-import { ChildDeletion, Placement } from "./ReactFiberFlags";
+import { ChildDeletion, Placement, Update } from "./ReactFiberFlags";
 import { Fiber, FiberRoot } from "./ReactInternalTypes";
-import { HostComponent, HostRoot, HostText } from "./ReactWorkTags";
+import { FunctionComponent, HostComponent, HostRoot, HostText } from "./ReactWorkTags";
+import { HookFlags, HookLayout } from "./ReactHookEffectTags";
 
 export function commitMutationEffects(root: FiberRoot, finishedWork: Fiber) {
   // 1. 遍历
@@ -36,6 +37,29 @@ function commitReconciliationEffects(finishedWork: Fiber) {
     commitDeletions(finishedWork.deletions!, parentDom);
     finishedWork.flags &= ~ChildDeletion;
     finishedWork.deletions = null;
+  }
+
+  if (flags & Update) {
+    if (finishedWork.tag === FunctionComponent) {
+      // 执行 layout effect
+      commitHookEffectListMount(HookLayout, finishedWork);
+    }
+  }
+}
+
+function commitHookEffectListMount(hookFlags: HookFlags, finishedWork: Fiber) {
+  const updateQueue = finishedWork.updateQueue;
+  let lastEffect = updateQueue!.lastEffect;
+  if (lastEffect !== null) {
+    const firstEffect = lastEffect.next;
+    let effect = firstEffect;
+    do {
+      if ((effect.tag & hookFlags) === hookFlags) {
+        const create = effect.create;
+        create();
+      }
+      effect = effect.next;
+    } while (effect !== firstEffect);
   }
 }
 

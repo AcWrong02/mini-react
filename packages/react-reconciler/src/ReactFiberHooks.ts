@@ -3,6 +3,7 @@ import { scheduleUpdateOnFiber } from "./ReactFiberWorkLoop";
 import type { Fiber, FiberRoot } from "./ReactInternalTypes";
 import { Flags, Passive, Update } from "./ReactFiberFlags";
 import { HookFlags, HookLayout, HookPassive } from "./ReactHookEffectTags";
+import { HostRoot } from "./ReactWorkTags";
 
 type Hook = {
     memoizedState: any;
@@ -256,6 +257,17 @@ function updateEffectImpl(
     const hook = updateWorkInProgressHook();
 
     const nextDeps = deps === undefined ? null : deps;
+
+    // 在更新阶段，判断依赖项是否发生变化
+    if (currentHook !== null) {
+        if (nextDeps !== null) {
+            const prevDeps = currentHook.memoizedState.deps;
+            if (areHookInputsEqual(nextDeps, prevDeps)) {
+                return;
+            }
+        }
+    }
+
     // todo 依赖项是否发生变化
     currentlyRenderingFiber!.flags |= fiberFlags;
     // * 1. 保存effect 2. 构建effect链表
