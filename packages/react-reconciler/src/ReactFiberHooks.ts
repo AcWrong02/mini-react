@@ -142,3 +142,50 @@ export function useState<S>(initialState: (() => S) | S) {
     const init = isFn(initialState) ? (initialState as any)() : initialState;
     return useReducer(null, init);
 }
+
+
+export function useMemo<T>(
+    nextCreate: () => T,
+    deps: Array<any> | void | null
+): T {
+    const hook = updateWorkInProgressHook();
+
+    const nextDeps = deps === undefined ? null : deps;
+
+    const prevState = hook.memoizedState;
+    // 检查依赖项是否发生变化
+    if (prevState !== null) {
+        if (nextDeps !== null) {
+            const prevDeps = prevState[1];
+            if (areHookInputsEqual(nextDeps, prevDeps)) {
+                // 依赖项没有变化，返回上一次计算的结果，就是缓存的值
+                return prevDeps[0];
+            }
+        }
+    }
+
+    const nextValue = nextCreate();
+
+    hook.memoizedState = [nextValue, nextDeps];
+
+    return nextValue;
+}
+
+// 检查hook依赖是否发生变化
+export function areHookInputsEqual(
+    nextDeps: Array<any>,
+    prevDeps: Array<any> | null
+): boolean {
+    if (prevDeps === null) {
+        return false;
+    }
+
+    for (let i = 0; i < prevDeps.length && i < nextDeps.length; i++) {
+        if (Object.is(nextDeps[i], prevDeps[i])) {
+            continue;
+        }
+        return false;
+    }
+
+    return true;
+}
