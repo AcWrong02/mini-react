@@ -200,6 +200,8 @@ function createChildReconciler(shouldTrackSideEffects: boolean) {
         return null;
       }
     }
+
+    return null;
   }
 
   function placeChild(
@@ -253,12 +255,14 @@ function createChildReconciler(shouldTrackSideEffects: boolean) {
     if (isText(newChild)) {
       const matchedFiber = existingChildren.get(newIdx) || null;
       return updateTextNode(returnFiber, matchedFiber, newChild + "");
-    } else {
+    } else if (typeof newChild === "object" && newChild !== null) {
       const matchedFiber =
         existingChildren.get(newChild.key === null ? newIdx : newChild.key) ||
         null;
       return updateElement(returnFiber, matchedFiber, newChild);
     }
+
+    return null;
   }
 
   function reconcileChildrenArray(
@@ -368,15 +372,15 @@ function createChildReconciler(shouldTrackSideEffects: boolean) {
             newFiber.key === null ? newIdx : newFiber.key
           );
         }
+        lastPlacedIndex = placeChild(newFiber as Fiber, lastPlacedIndex, newIdx);
+        if (previousNewFiber === null) {
+          // 第一个节点，不要用newIdx判断，因为有可能有null，而null不是有效fiber
+          resultFirstChild = newFiber;
+        } else {
+          previousNewFiber.sibling = newFiber;
+        }
+        previousNewFiber = newFiber;
       }
-      lastPlacedIndex = placeChild(newFiber as Fiber, lastPlacedIndex, newIdx);
-      if (previousNewFiber === null) {
-        // 第一个节点，不要用newIdx判断，因为有可能有null，而null不是有效fiber
-        resultFirstChild = newFiber;
-      } else {
-        previousNewFiber.sibling = newFiber;
-      }
-      previousNewFiber = newFiber;
     }
 
     // !3. 如果新节点已经构建完了，但是老节点还有

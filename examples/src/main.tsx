@@ -44,6 +44,10 @@ function FunctionComponent() {
         ))}
       </ul>
 
+      {count1 % 2 === 0 ? <h1>null</h1> : null}
+      {count1 % 2 === 0 ? <h1>undefined</h1> : undefined}
+      {count1 % 2 === 0 && <h1>boolean</h1>}
+
       {/* {count1 % 2 === 0 ? (
         <button
           onClick={() => {
