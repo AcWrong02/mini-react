@@ -189,3 +189,25 @@ export function areHookInputsEqual(
 
     return true;
 }
+
+export function useCallback<T>(callback: T, deps: Array<any> | void | null): T {
+    const hook = updateWorkInProgressHook();
+
+    const nextDeps = deps === undefined ? null : deps;
+
+    const prevState = hook.memoizedState;
+    // 检查依赖性是否发生变化
+    if (prevState !== null) {
+        if (nextDeps !== null) {
+            const prevDeps = prevState[1];
+            if (areHookInputsEqual(nextDeps, prevDeps)) {
+                // 依赖项没有变化，返回上一次缓存的callback
+                return prevState[0];
+            }
+        }
+    }
+
+    hook.memoizedState = [callback, nextDeps];
+
+    return callback;
+}
