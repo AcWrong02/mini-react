@@ -59,6 +59,8 @@ function FiberNode(tag: WorkTag, pendingProps: any, key: null | string) {
   this.alternate = null;
 
   this.deletions = null;
+
+  this.updateQueue = null;
 }
 
 // 根据 ReactElement 创建Fiber
@@ -117,6 +119,7 @@ export function createWorkInProgress(current: Fiber, pendingProps: any): Fiber {
   workInProgress.child = current.child;
   workInProgress.memoizedProps = current.memoizedProps;
   workInProgress.memoizedState = current.memoizedState;
+  workInProgress.updateQueue = current.updateQueue;
 
   workInProgress.sibling = current.sibling;
   workInProgress.index = current.index;

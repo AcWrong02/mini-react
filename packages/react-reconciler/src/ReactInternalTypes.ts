@@ -48,6 +48,9 @@ export type Fiber = {
 
   // 记录要删除的子节点
   deletions: Array<Fiber> | null;
+
+  // 记录effect
+  updateQueue: any;
 };
 
 export type Container = Element | Document | DocumentFragment;

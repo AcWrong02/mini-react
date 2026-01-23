@@ -1,11 +1,19 @@
 import { isFn } from "shared/utils";
 import { scheduleUpdateOnFiber } from "./ReactFiberWorkLoop";
 import type { Fiber, FiberRoot } from "./ReactInternalTypes";
-import { HostRoot } from "./ReactWorkTags";
+import { Flags, Passive, Update } from "./ReactFiberFlags";
+import { HookFlags, HookLayout, HookPassive } from "./ReactHookEffectTags";
 
 type Hook = {
     memoizedState: any;
     next: null | Hook;
+};
+
+type Effect = {
+    tag: HookFlags;
+    create: () => (() => void) | void;
+    deps: Array<any> | void | null;
+    next: null | Effect;
 };
 
 // 当前正在工作的函数组件的fiber
@@ -21,6 +29,7 @@ export function renderWithHooks<Props>(
 ): any {
     currentlyRenderingFiber = workInProgress;
     workInProgress.memoizedState = null;
+    workInProgress.updateQueue = null;
 
     let children = Component(props);
 
@@ -218,4 +227,67 @@ export function useRef<T>(initialValue: T): { current: T } {
         hook.memoizedState = { current: initialValue };
     }
     return hook.memoizedState;
+}
+
+// useEffect与useLayoutEffect的区别
+// sy 存储结构一样
+// sy effect和destroy函数的执行时机不同
+export function useLayoutEffect(
+    create: () => (() => void) | void,
+    deps: Array<any> | void | null
+) {
+    return updateEffectImpl(Update, HookLayout, create, deps);
+}
+
+export function useEffect(
+    create: () => (() => void) | void,
+    deps: Array<any> | void | null
+) {
+    return updateEffectImpl(Passive, HookPassive, create, deps);
+}
+
+// 存储 effect
+function updateEffectImpl(
+    fiberFlags: Flags,
+    hookFlags: HookFlags,
+    create: () => (() => void) | void,
+    deps: Array<any> | void | null
+) {
+    const hook = updateWorkInProgressHook();
+
+    const nextDeps = deps === undefined ? null : deps;
+    // todo 依赖项是否发生变化
+    currentlyRenderingFiber!.flags |= fiberFlags;
+    // * 1. 保存effect 2. 构建effect链表
+    hook.memoizedState = pushEffect(hookFlags, create, nextDeps);
+}
+
+function pushEffect(
+    hookFlags: HookFlags,
+    create: () => (() => void) | void,
+    deps: Array<any> | void | null
+) {
+    const effect: Effect = {
+        tag: hookFlags,
+        create,
+        deps,
+        next: null,
+    };
+
+    let componentUpdateQueue = currentlyRenderingFiber!.updateQueue;
+    // 单向循环链表
+    if (componentUpdateQueue === null) {
+        // 第一个effect
+        componentUpdateQueue = {
+            lastEffect: null,
+        };
+        currentlyRenderingFiber!.updateQueue = componentUpdateQueue;
+        componentUpdateQueue.lastEffect = effect.next = effect;
+    } else {
+        const lastEffect = componentUpdateQueue.lastEffect;
+        const firstEffect = lastEffect.next;
+        lastEffect.next = effect;
+        effect.next = firstEffect;
+        componentUpdateQueue.lastEffect = effect;
+    }
 }
