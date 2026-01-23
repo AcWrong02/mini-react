@@ -74,7 +74,10 @@ function commitPlacement(finishedWork: Fiber) {
       parentDom = parentDom.containerInfo;
     }
 
-    parentDom.appendChild(domNode);
+    // 遍历fiber，寻找finishedWork的兄弟节点，并且这个sibling有dom节点，且是更新的节点。在本轮不发生移动
+    const before = getHostSibling(finishedWork);
+
+    insertOrAppendPlacementNode(finishedWork, before, parentDom);
   } else {
     // Fragment
     let kid = finishedWork.child;
@@ -82,6 +85,65 @@ function commitPlacement(finishedWork: Fiber) {
       commitPlacement(kid);
       kid = kid.sibling;
     }
+  }
+}
+
+function getHostSibling(fiber: Fiber) {
+  let node = fiber;
+  while (true) {
+    // 1️⃣ 向上找可以用的 sibling
+    while (node.sibling === null) {
+      if (node.return === null || isHostParent(node.return)) {
+        return null;
+      }
+      node = node.return;
+    }
+
+    // 2️⃣ 找到 sibling
+    node = node.sibling;
+
+    // 3️⃣ 向下遍历，直到找到 Host 节点
+    let restartOuter = false;
+
+    while (!isHost(node)) {
+      // 跳过需要 Placement 的节点
+      if (node.flags & Placement) {
+        restartOuter = true;
+        break;
+      }
+
+      if (node.child === null) {
+        restartOuter = true;
+        break;
+      }
+
+      node = node.child;
+    }
+
+    // 等价于 continue sibling
+    if (restartOuter) {
+      continue;
+    }
+
+    // 4️⃣ 找到 HostComponent | HostText
+    if (!(node.flags & Placement)) {
+      return node.stateNode;
+    }
+  }
+  return null;
+}
+
+// 新增插入 | 位置移动
+// insertBefore | appendChild
+function insertOrAppendPlacementNode(
+  node: Fiber,
+  before: Element,
+  parent: Element
+) {
+  if (before) {
+    parent.insertBefore(getStateNode(node), before);
+  } else {
+    parent.appendChild(getStateNode(node));
   }
 }
 

@@ -18,12 +18,21 @@ let executionContext: ExecutionContext = NoContext;
 let workInProgress: Fiber | null = null;
 let workInProgressRoot: FiberRoot | null;
 
-export function scheduleUpdateOnFiber(root: FiberRoot, fiber: Fiber) {
+export function scheduleUpdateOnFiber(
+  root: FiberRoot,
+  fiber: Fiber,
+  isSync?: boolean
+) {
   workInProgressRoot = root;
   workInProgress = fiber;
 
-  ensureRootIsScheduled(root);
+  if (isSync) {
+    queueMicrotask(() => performConcurrentWorkOnRoot(root));
+  } else {
+    ensureRootIsScheduled(root);
+  }
 }
+
 
 export function performConcurrentWorkOnRoot(root: FiberRoot) {
   // 1. render，构建Fiber树VDOM

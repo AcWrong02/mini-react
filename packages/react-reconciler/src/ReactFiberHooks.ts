@@ -1,3 +1,4 @@
+import { isFn } from "shared/utils";
 import { scheduleUpdateOnFiber } from "./ReactFiberWorkLoop";
 import type { Fiber, FiberRoot } from "./ReactInternalTypes";
 import { HostRoot } from "./ReactWorkTags";
@@ -71,7 +72,7 @@ function updateWorkInProgressHook(): Hook {
 }
 
 export function useReducer<S, I, A>(
-    reducer: (state: S, action: A) => S,
+    reducer: ((state: S, action: A) => S) | null,
     initialArg: I,
     init?: (initialArg: I) => S
 ) {
@@ -105,7 +106,7 @@ export function useReducer<S, I, A>(
 function dispatchReducerAction<S, I, A>(
     fiber: Fiber,
     hook: Hook,
-    reducer: (state: S, action: A) => S,
+    reducer: ((state: S, action: A) => S) | null,
     action: any
 ) {
     hook.memoizedState = reducer ? reducer(hook.memoizedState, action) : action;
@@ -117,7 +118,7 @@ function dispatchReducerAction<S, I, A>(
         fiber.sibling.alternate = fiber.sibling;
     }
 
-    scheduleUpdateOnFiber(root, fiber);
+    scheduleUpdateOnFiber(root, fiber, true);
 }
 
 // 根据 sourceFiber 找根节点
@@ -131,4 +132,13 @@ function getRootForUpdatedFiber(sourceFiber: Fiber): FiberRoot {
     }
 
     return node.tag === HostRoot ? node.stateNode : null;
+}
+
+
+// 源码中useState与useReducer对比
+// useState,如果state没有改变，不引起组件更新。useReducer不是如此。
+// reducer 代表state修改规则，useReducer比较方便服用这个规则
+export function useState<S>(initialState: (() => S) | S) {
+    const init = isFn(initialState) ? (initialState as any)() : initialState;
+    return useReducer(null, init);
 }

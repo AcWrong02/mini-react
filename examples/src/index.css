@@ -17,3 +17,19 @@ body {
 ul {
   margin: 60px 0;
 }
+
+.red_bg {
+  background-color: red;
+}
+
+.green_bg {
+  background-color: green;
+}
+
+.red {
+  color: red;
+}
+
+.green {
+  color: green;
+}
