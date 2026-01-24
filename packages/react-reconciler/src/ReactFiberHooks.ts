@@ -302,4 +302,6 @@ function pushEffect(
         effect.next = firstEffect;
         componentUpdateQueue.lastEffect = effect;
     }
+
+    return effect;
 }

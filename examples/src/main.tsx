@@ -20,8 +20,23 @@ function FunctionComponent() {
       <h1>函数组件</h1>
       <button onClick={() => setCount()}>{count1}</button>
       <button onClick={() => setCount2(count2 + 1)}>{count2}</button>
+      <Child count1={count1} count2={count2} />
     </div>
   );
+}
+
+function Child({ count1, count2 }: { count1: number; count2: number }) {
+  // layout effect
+  useLayoutEffect(() => {
+    console.log("useLayoutEffect Child"); //sy-log
+  }, [count1]);
+
+  // passive effect
+  useEffect(() => {
+    console.log("useEffect Child"); //sy-log
+  }, [count2]);
+
+  return <div>Child</div>;
 }
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(

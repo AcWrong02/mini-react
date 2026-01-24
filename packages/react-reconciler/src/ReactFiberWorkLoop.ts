@@ -3,7 +3,12 @@ import { ensureRootIsScheduled } from "./ReactFiberRootScheduler";
 import { createWorkInProgress } from "./ReactFiber";
 import { beginWork } from "./ReactFiberBeginWork";
 import { completeWork } from "./ReactFiberCompleteWork";
-import { commitMutationEffects } from "./ReactFiberCommitWork";
+import {
+  commitMutationEffects,
+  flushPassiveEffects,
+} from "./ReactFiberCommitWork";
+import { Scheduler } from "scheduler";
+import { NormalPriority } from "scheduler/src/SchedulerPriorities";
 
 type ExecutionContext = number;
 
@@ -60,8 +65,12 @@ function commitRoot(root: FiberRoot) {
   // 1. commit阶段开始
   executionContext |= CommitContext;
   const prevExcutionContext = executionContext;
-  // 2. mutation阶段，渲染DOM树;
+  // !2.1 mutation阶段, 渲染DOM树
   commitMutationEffects(root, root.finishedWork as Fiber); //Fiber,HostRoot=3
+  // !2.2 passive effect阶段，执行 passive effect
+  Scheduler.scheduleCallback(NormalPriority, () => {
+    flushPassiveEffects(root.finishedWork as Fiber);
+  });
   // 3. commit结束
   executionContext = prevExcutionContext;
   workInProgressRoot = null;
