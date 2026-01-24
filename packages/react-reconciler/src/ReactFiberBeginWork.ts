@@ -1,5 +1,5 @@
 import { Fiber } from "./ReactInternalTypes";
-import { ClassComponent, Fragment, FunctionComponent, HostComponent, HostRoot, HostText } from "./ReactWorkTags";
+import { ClassComponent, ContextProvider, Fragment, FunctionComponent, HostComponent, HostRoot, HostText } from "./ReactWorkTags";
 import { mountChildFibers, reconcileChildFibers } from "./ReactChildFiber";
 import { isNum, isStr } from "shared/utils";
 import { renderWithHooks } from "./ReactFiberHooks";
@@ -23,6 +23,9 @@ export function beginWork(
       return updateClassComponent(current, workInProgress)
     case FunctionComponent:
       return updateFunctionComponent(current, workInProgress);
+    case ContextProvider:
+      return updateContextProvider(current, workInProgress);
+
     // todo
   }
   throw new Error(
@@ -85,6 +88,20 @@ function updateFunctionComponent(current: Fiber | null, workInProgress: Fiber) {
   const { type, pendingProps } = workInProgress;
   const children = renderWithHooks(current, workInProgress, type, pendingProps);
   reconcileChildren(current, workInProgress, children);
+  return workInProgress.child;
+}
+
+function updateContextProvider(current: Fiber | null, workInProgress: Fiber) {
+  const context = workInProgress.type._context;
+  const value = workInProgress.pendingProps.value;
+
+  // todo 找个地方记录下context、value，可以让后代组件消费
+  // 数据结构存储：stack: 先进后出
+  reconcileChildren(
+    current,
+    workInProgress,
+    workInProgress.pendingProps.children
+  );
   return workInProgress.child;
 }
 

@@ -1,6 +1,6 @@
 import { isNum, isStr } from "shared/utils";
 import { Fiber } from "./ReactInternalTypes";
-import { ClassComponent, Fragment, FunctionComponent, HostComponent, HostRoot, HostText } from "./ReactWorkTags";
+import { ClassComponent, ContextProvider, Fragment, FunctionComponent, HostComponent, HostRoot, HostText } from "./ReactWorkTags";
 
 export function completeWork(
   current: Fiber | null,
@@ -11,6 +11,7 @@ export function completeWork(
     case HostRoot:
     case Fragment:
     case ClassComponent:
+    case ContextProvider:
     case FunctionComponent: {
       return null;
     }

@@ -27,13 +27,13 @@ function FunctionComponent() {
       <h1>函数组件</h1>
       <button onClick={() => setCount()}>{count}</button>
 
-      {/* <ThemeContext.Provider value="green">
+      <ThemeContext.Provider value="green">
         <CountContext.Provider value={count}>
-          <CountContext.Provider value={count + 1}> */}
-      <Child />
-      {/* </CountContext.Provider>
+          <CountContext.Provider value={count + 1}>
+            <Child />
+          </CountContext.Provider>
         </CountContext.Provider>
-      </ThemeContext.Provider> */}
+      </ThemeContext.Provider>
     </div>
   );
 }
