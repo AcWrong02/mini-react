@@ -1,6 +1,6 @@
 import { Fiber } from "./ReactInternalTypes";
-import { pushProvider } from "./ReactFiberNewContext";
-import { ClassComponent, ContextProvider, Fragment, FunctionComponent, HostComponent, HostRoot, HostText } from "./ReactWorkTags";
+import { pushProvider, readContext } from "./ReactFiberNewContext";
+import { ClassComponent, ContextConsumer, ContextProvider, Fragment, FunctionComponent, HostComponent, HostRoot, HostText } from "./ReactWorkTags";
 import { mountChildFibers, reconcileChildFibers } from "./ReactChildFiber";
 import { isNum, isStr } from "shared/utils";
 import { renderWithHooks } from "./ReactFiberHooks";
@@ -26,7 +26,8 @@ export function beginWork(
       return updateFunctionComponent(current, workInProgress);
     case ContextProvider:
       return updateContextProvider(current, workInProgress);
-
+    case ContextConsumer:
+      return updateContextConsumer(current, workInProgress);
     // todo
   }
   throw new Error(
@@ -105,6 +106,16 @@ function updateContextProvider(current: Fiber | null, workInProgress: Fiber) {
     workInProgress,
     workInProgress.pendingProps.children
   );
+  return workInProgress.child;
+}
+
+function updateContextConsumer(current: Fiber | null, workInProgress: Fiber) {
+  const context = workInProgress.type;
+  const newValue = readContext(context);
+
+  const render = workInProgress.pendingProps.children;
+  const newChildren = render(newValue);
+  reconcileChildren(current, workInProgress, newChildren);
   return workInProgress.child;
 }
 

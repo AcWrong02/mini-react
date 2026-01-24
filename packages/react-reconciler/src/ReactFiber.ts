@@ -3,6 +3,7 @@ import { NoFlags } from "./ReactFiberFlags";
 import { Fiber } from "./ReactInternalTypes";
 import {
   ClassComponent,
+  ContextConsumer,
   ContextProvider,
   Fragment,
   FunctionComponent,
@@ -12,7 +13,7 @@ import {
   WorkTag,
 } from "./ReactWorkTags";
 import { ReactElement } from "shared/ReactTypes";
-import { REACT_FRAGMENT_TYPE, REACT_PROVIDER_TYPE } from "shared/ReactSymbols";
+import { REACT_CONTEXT_TYPE, REACT_FRAGMENT_TYPE, REACT_PROVIDER_TYPE } from "shared/ReactSymbols";
 
 // 创建一个Fiber
 export function createFiber(
@@ -93,6 +94,8 @@ export function createFiberFromTypeAndProps(
     fiberTag = Fragment;
   } else if (type.$$typeof === REACT_PROVIDER_TYPE) {
     fiberTag = ContextProvider;
+  } else if (type.$$typeof === REACT_CONTEXT_TYPE) {
+    fiberTag = ContextConsumer;
   }
 
   const fiber = createFiber(fiberTag, pendingProps, key);

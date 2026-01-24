@@ -51,7 +51,7 @@ function Child() {
       <p>{count}</p>
 
       <p>第二种消费方式：Consumer</p>
-      {/* <ThemeContext.Consumer>
+      <ThemeContext.Consumer>
         {(theme) => (
           <div className={theme}>
             <CountContext.Consumer>
@@ -59,7 +59,7 @@ function Child() {
             </CountContext.Consumer>
           </div>
         )}
-      </ThemeContext.Consumer> */}
+      </ThemeContext.Consumer>
 
       <p>第三种消费方式：contextType，只能消费单一的context来源</p>
       {/* <ClassComponent /> */}
