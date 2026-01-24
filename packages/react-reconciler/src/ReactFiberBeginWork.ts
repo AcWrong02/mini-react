@@ -80,7 +80,14 @@ function updateHostFragment(current: Fiber | null, workInProgress: Fiber) {
 // 协调子节点
 function updateClassComponent(current: Fiber | null, workInProgress: Fiber) {
   const { type, pendingProps } = workInProgress;
-  const instance = new type(pendingProps);
+  const context = type.contextType;
+  const newValue = readContext(context);
+  let instance = workInProgress.stateNode;
+  if (current === null) {
+    instance = new type(pendingProps);
+    workInProgress.stateNode = instance;
+  }
+  instance.context = newValue;
   const children = instance.render();
   reconcileChildren(current, workInProgress, children);
   return workInProgress.child;

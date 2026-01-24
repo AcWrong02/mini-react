@@ -62,23 +62,23 @@ function Child() {
       </ThemeContext.Consumer>
 
       <p>第三种消费方式：contextType，只能消费单一的context来源</p>
-      {/* <ClassComponent /> */}
+      <ClassComponent />
     </div>
   );
 }
 
-// class ClassComponent extends Component {
-//   static contextType = CountContext;
-//   render() {
-//     console.log("ClassComponent render");
-//     return (
-//       <div className="border">
-//         <h1>类组件</h1>
-//         <p>{this.context as number}</p>
-//       </div>
-//     );
-//   }
-// }
+class ClassComponent extends Component {
+  static contextType = CountContext;
+  render() {
+    console.log("ClassComponent render");
+    return (
+      <div className="border">
+        <h1>类组件</h1>
+        <p>{this.context as number}</p>
+      </div>
+    );
+  }
+}
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   (<FunctionComponent />) as any
