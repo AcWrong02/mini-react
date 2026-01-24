@@ -1,4 +1,5 @@
 import { Fiber } from "./ReactInternalTypes";
+import { pushProvider } from "./ReactFiberNewContext";
 import { ClassComponent, ContextProvider, Fragment, FunctionComponent, HostComponent, HostRoot, HostText } from "./ReactWorkTags";
 import { mountChildFibers, reconcileChildFibers } from "./ReactChildFiber";
 import { isNum, isStr } from "shared/utils";
@@ -97,6 +98,8 @@ function updateContextProvider(current: Fiber | null, workInProgress: Fiber) {
 
   // todo 找个地方记录下context、value，可以让后代组件消费
   // 数据结构存储：stack: 先进后出
+  console.log("updateContextProvider：", workInProgress)
+  pushProvider(context, value);
   reconcileChildren(
     current,
     workInProgress,

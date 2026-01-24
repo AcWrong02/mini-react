@@ -32,6 +32,7 @@ function FunctionComponent() {
           <CountContext.Provider value={count + 1}>
             <Child />
           </CountContext.Provider>
+          <Child />
         </CountContext.Provider>
       </ThemeContext.Provider>
     </div>
