@@ -3,7 +3,9 @@ import {
   DefaultEventPriority,
   DiscreteEventPriority,
   EventPriority,
+  getCurrentUpdatePriority,
   IdleEventPriority,
+  setCurrentUpdatePriority,
 } from "react-reconciler/src/ReactEventPriorities";
 import { DOMEventName } from "./DOMEventNames";
 import * as Scheduler from "scheduler";
@@ -14,6 +16,10 @@ import {
   NormalPriority,
   UserBlockingPriority,
 } from "scheduler/src/SchedulerPriorities";
+import { EventSystemFlags, IS_CAPTURE_PHASE } from "./EventSystemFlags";
+import { AnyNativeEvent, DispatchListener, DispatchQueue, extractEvents } from "./DOMPluginEventSystem";
+import { getClosestInstanceFromNode } from "../client/ReactDOMComponentTree";
+import { invokeGuardedCallbackAndCatchFirstError } from "../../../shared/ReactErrorUtils"
 
 export function createEventListenerWrapperWithPriority(
   targetContainer: EventTarget,
@@ -45,17 +51,106 @@ export function createEventListenerWrapperWithPriority(
 }
 
 // todo 不同的事件派发方法
-function dispatchDiscreteEvent() {
-  console.log(
-    "%c [  ]-50",
-    "font-size:13px; background:pink; color:#bf2c9f;",
-    arguments
-  );
+function dispatchDiscreteEvent(
+  domEventName: DOMEventName,
+  eventSystemFlags: EventSystemFlags,
+  container: EventTarget,
+  nativeEvent: AnyNativeEvent
+) {
+  // ! 1. 记录上一次的事件优先级
+  const previousPriority = getCurrentUpdatePriority();
+  try {
+    // !4. 设置当前事件优先级为DiscreteEventPriority
+    setCurrentUpdatePriority(DiscreteEventPriority);
+    // !5. 调用dispatchEvent，执行事件
+    dispatchEvent(domEventName, eventSystemFlags, container, nativeEvent);
+  } finally {
+    // !6. 恢复
+    setCurrentUpdatePriority(previousPriority);
+  }
 }
 
-function dispatchContinuousEvent() { }
+function dispatchContinuousEvent(
+  domEventName: DOMEventName,
+  eventSystemFlags: EventSystemFlags,
+  container: EventTarget,
+  nativeEvent: AnyNativeEvent
+) {
+  const previousPriority = getCurrentUpdatePriority();
+  try {
+    setCurrentUpdatePriority(ContinuousEventPriority);
+    dispatchEvent(domEventName, eventSystemFlags, container, nativeEvent);
+  } finally {
+    setCurrentUpdatePriority(previousPriority);
+  }
+}
 
-function dispatchEvent() { }
+export function dispatchEvent(
+  domEventName: DOMEventName,
+  eventSystemFlags: number,
+  targetContainer: EventTarget,
+  nativeEvent: AnyNativeEvent
+): void {
+  const nativeEventTarget = nativeEvent.target;
+  // 拿到对应的Fiber节点
+  const return_targetInst = getClosestInstanceFromNode(nativeEventTarget);
+
+  const dispatchQueue: DispatchQueue = [];
+
+  // 给dispatchQueue添加事件
+  extractEvents(
+    dispatchQueue,
+    domEventName,
+    return_targetInst,
+    nativeEvent,
+    nativeEventTarget,
+    eventSystemFlags,
+    targetContainer
+  );
+
+  processDispatchQueue(dispatchQueue, eventSystemFlags);
+}
+
+export function processDispatchQueue(
+  dispatchQueue: DispatchQueue,
+  eventSystemFlags: EventSystemFlags
+): void {
+  const inCapturePhase = (eventSystemFlags & IS_CAPTURE_PHASE) !== 0;
+  for (let i = 0; i < dispatchQueue.length; i++) {
+    const { event, listeners } = dispatchQueue[i];
+    processDispatchQueueItemsInOrder(event, listeners, inCapturePhase);
+  }
+}
+
+function processDispatchQueueItemsInOrder(
+  event: Event,
+  dispatchListeners: Array<DispatchListener>,
+  inCapturePhase: boolean
+): void {
+  if (inCapturePhase) {
+    // 捕获阶段，从上往下执行
+    for (let i = dispatchListeners.length - 1; i >= 0; i--) {
+      const { instance, currentTarget, listener } = dispatchListeners[i];
+      executeDispatch(event, listener, currentTarget);
+    }
+  } else {
+    for (let i = 0; i < dispatchListeners.length; i++) {
+      const { instance, currentTarget, listener } = dispatchListeners[i];
+      executeDispatch(event, listener, currentTarget);
+    }
+  }
+}
+
+function executeDispatch(
+  event: Event,
+  listener: Function,
+  currentTarget: EventTarget
+): void {
+  const type = event.type || "unknown-event";
+  // event.currentTarget = currentTarget;
+  invokeGuardedCallbackAndCatchFirstError(type, listener, undefined, event);
+  // event.currentTarget = null;
+}
 
 export function getEventPriority(domEventName: DOMEventName): EventPriority {
   switch (domEventName) {

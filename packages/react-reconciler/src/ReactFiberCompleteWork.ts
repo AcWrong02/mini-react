@@ -2,6 +2,10 @@ import { isNum, isStr } from "shared/utils";
 import { Fiber } from "./ReactInternalTypes";
 import { ClassComponent, ContextConsumer, ContextProvider, Fragment, FunctionComponent, HostComponent, HostRoot, HostText } from "./ReactWorkTags";
 import { popProvider } from "./ReactFiberNewContext";
+import {
+  precacheFiberNode,
+  updateFiberProps,
+} from "../../react-dom-bindings/src/client/ReactDOMComponentTree";
 
 export function completeWork(
   current: Fiber | null,
@@ -35,10 +39,14 @@ export function completeWork(
         appendAllChildren(instance, workInProgress);
         workInProgress.stateNode = instance;
       }
+      precacheFiberNode(workInProgress, workInProgress.stateNode as Element);
+      updateFiberProps(workInProgress.stateNode, newProps);
       return null;
     }
     case HostText: {
       workInProgress.stateNode = document.createTextNode(newProps);
+      precacheFiberNode(workInProgress, workInProgress.stateNode as Element);
+      updateFiberProps(workInProgress.stateNode, newProps);
       return null;
     }
     // todo

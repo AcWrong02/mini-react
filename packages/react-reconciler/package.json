@@ -12,6 +12,7 @@
   "packageManager": "pnpm@10.12.4",
   "dependencies": {
     "shared": "workspace:*",
-    "scheduler": "workspace:*"
+    "scheduler": "workspace:*",
+    "react-dom-bindings": "workspace:*"
   }
 }
