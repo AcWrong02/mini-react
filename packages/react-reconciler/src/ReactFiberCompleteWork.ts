@@ -86,7 +86,7 @@ function finalizeInitialChildren(
     } else {
       // 3. 设置属性
       if (propKey === "onClick") {
-        domElement.removeEventListener("click", prevProp);
+        // domElement.removeEventListener("click", prevProp);
       } else {
         if (!(prevProp in nextProps)) {
           (domElement as any)[propKey] = "";
@@ -105,7 +105,7 @@ function finalizeInitialChildren(
     } else {
       // 3. 设置属性
       if (propKey === "onClick") {
-        domElement.addEventListener("click", nextProp);
+        // domElement.addEventListener("click", nextProp);
       } else {
         (domElement as any)[propKey] = nextProp;
       }
