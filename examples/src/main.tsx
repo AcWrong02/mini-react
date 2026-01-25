@@ -10,7 +10,10 @@ function FunctionComponent() {
   return (
     <div className="border">
       <h1>函数组件</h1>
-      <button onClick={() => setCount()}>{count}</button>
+      <button onClick={(e) => {
+        console.log("合成事件对象：", e)
+        setCount()
+      }}>{count}</button>
     </div>
   );
 }

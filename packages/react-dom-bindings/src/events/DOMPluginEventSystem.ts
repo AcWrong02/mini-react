@@ -11,6 +11,7 @@ import {
 import { Fiber } from "react-reconciler/src/ReactInternalTypes";
 import { HostComponent } from "react-reconciler/src/ReactWorkTags";
 import getListener from "./getListener";
+import { ReactSyntheticEvent } from "./ReactSyntheticEventType";
 
 export type AnyNativeEvent = Event | KeyboardEvent | MouseEvent | TouchEvent;
 
@@ -21,7 +22,7 @@ export type DispatchListener = {
 };
 
 type DispatchEntry = {
-  event: AnyNativeEvent; // todo 实现合成事件
+  event: ReactSyntheticEvent;
   listeners: Array<DispatchListener>;
 };
 

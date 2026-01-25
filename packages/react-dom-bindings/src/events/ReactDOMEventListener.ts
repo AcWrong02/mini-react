@@ -20,6 +20,7 @@ import { EventSystemFlags, IS_CAPTURE_PHASE } from "./EventSystemFlags";
 import { AnyNativeEvent, DispatchListener, DispatchQueue, extractEvents } from "./DOMPluginEventSystem";
 import { getClosestInstanceFromNode } from "../client/ReactDOMComponentTree";
 import { invokeGuardedCallbackAndCatchFirstError } from "../../../shared/ReactErrorUtils"
+import { ReactSyntheticEvent } from "./ReactSyntheticEventType";
 
 export function createEventListenerWrapperWithPriority(
   targetContainer: EventTarget,
@@ -123,26 +124,35 @@ export function processDispatchQueue(
 }
 
 function processDispatchQueueItemsInOrder(
-  event: Event,
+  event: ReactSyntheticEvent,
   dispatchListeners: Array<DispatchListener>,
   inCapturePhase: boolean
 ): void {
+  let prevInstance: Fiber | null = null;
   if (inCapturePhase) {
     // 捕获阶段，从上往下执行
     for (let i = dispatchListeners.length - 1; i >= 0; i--) {
       const { instance, currentTarget, listener } = dispatchListeners[i];
+      if (prevInstance !== instance && event.isPropagationStopped()) {
+        return;
+      }
       executeDispatch(event, listener, currentTarget);
+      prevInstance = instance;
     }
   } else {
     for (let i = 0; i < dispatchListeners.length; i++) {
       const { instance, currentTarget, listener } = dispatchListeners[i];
+      if (prevInstance !== instance && event.isPropagationStopped()) {
+        return;
+      }
       executeDispatch(event, listener, currentTarget);
+      prevInstance = instance;
     }
   }
 }
 
 function executeDispatch(
-  event: Event,
+  event: ReactSyntheticEvent,
   listener: Function,
   currentTarget: EventTarget
 ): void {
