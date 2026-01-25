@@ -1,6 +1,13 @@
 import { DOMEventName } from "./DOMEventNames";
+import { allNativeEvents } from "./EventRegistry";
 
 import * as SimpleEventPlugin from "./plugins/SimpleEventPlugin";
+import { EventSystemFlags, IS_CAPTURE_PHASE } from "./EventSystemFlags";
+import { createEventListenerWrapperWithPriority } from "./ReactDOMEventListener";
+import {
+  addEventBubbleListener,
+  addEventCaptureListener,
+} from "./EventListener";
 
 SimpleEventPlugin.registerEvents();
 // EnterLeaveEventPlugin.registerEvents();
@@ -55,4 +62,60 @@ export const nonDelegatedEvents: Set<DOMEventName> = new Set([
 ]);
 
 // todo 事件绑定
-export function listenToAllSupportedEvents() {}
+const listeningMarker = "_reactListening" + Math.random().toString(36).slice(2);
+export function listenToAllSupportedEvents(rootContainerElement: EventTarget) {
+  // 防止重复绑定
+  if (!(rootContainerElement as any)[listeningMarker]) {
+    (rootContainerElement as any)[listeningMarker] = true;
+    // 事件绑定
+    allNativeEvents.forEach((domEventName) => {
+      // 特殊处理selectiononchange
+      // 捕获、冒泡
+      // 有些事件在DOM上冒泡行为不一致，这些事件就不做事件委托
+      if (!nonDelegatedEvents.has(domEventName)) {
+        listenToNativeEvent(domEventName, false, rootContainerElement);
+      }
+      listenToNativeEvent(domEventName, true, rootContainerElement);
+    })
+  }
+}
+
+export function listenToNativeEvent(
+  domEventName: DOMEventName,
+  isCapturePhaseListener: boolean,
+  target: EventTarget
+): void {
+  let eventSystemFlags = 0;
+  if (isCapturePhaseListener) {
+    eventSystemFlags |= IS_CAPTURE_PHASE;
+  }
+  addTrappedEventListener(
+    target,
+    domEventName,
+    eventSystemFlags,
+    isCapturePhaseListener
+  );
+}
+
+function addTrappedEventListener(
+  targetContainer: EventTarget,
+  domEventName: DOMEventName,
+  eventSystemFlags: EventSystemFlags,
+  isCapturePhaseListener: boolean
+) {
+  // ! 1. 获取对应事件，事件定义在ReactDOMEventListener.js中
+  // 如DiscreteEventPriority对应dispatchDiscreteEvent，ContinuousEventPriority对应dispatchContinuousEvent
+  let listener = createEventListenerWrapperWithPriority(
+    targetContainer,
+    domEventName,
+    eventSystemFlags
+  );
+
+  // ! 2. 绑定事件
+  if (isCapturePhaseListener) {
+    // * 捕获阶段
+    addEventCaptureListener(targetContainer, domEventName, listener);
+  } else {
+    addEventBubbleListener(targetContainer, domEventName, listener);
+  }
+}
